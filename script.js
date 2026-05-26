@@ -1,25 +1,42 @@
 gsap.registerPlugin(ScrollTrigger);
 
-// HERO animation
-gsap.from(".hero h1", {
-  opacity: 0,
-  y: -40,
-  duration: 1
-});
+function splitText(element) {
+  if (!element) return [];
+  const text = element.textContent.trim();
+  const words = text.split(' ');
+  element.textContent = '';
 
-gsap.from(".hero p", {
-  opacity: 0,
-  y: 20,
-  delay: 0.3,
-  duration: 1
-});
+  const wrapper = document.createElement('span');
+  wrapper.className = 'split-text';
+  wrapper.style.whiteSpace = 'pre-wrap';
+
+  words.forEach((word, index) => {
+    const span = document.createElement('span');
+    span.className = 'split-word';
+    span.textContent = word + (index < words.length - 1 ? ' ' : '');
+    wrapper.append(span);
+  });
+
+  element.append(wrapper);
+  return wrapper.querySelectorAll('.split-word');
+}
+
+const heroTitleWords = splitText(document.querySelector('.hero h1'));
+const heroCopyWords = splitText(document.querySelector('.hero-text'));
+
+const heroTimeline = gsap.timeline({ defaults: { ease: 'power3.out' } });
+heroTimeline
+  .from('.eyebrow', { opacity: 0, y: 20, duration: 0.65 })
+  .from(heroTitleWords, { opacity: 0, y: 32, stagger: 0.05, duration: 0.7 }, '-=0.45')
+  .from(heroCopyWords, { opacity: 0, y: 24, stagger: 0.04, duration: 0.55 }, '-=0.45')
+  .from('.hero-actions .button', { opacity: 0, y: 20, stagger: 0.12, duration: 0.45 }, '-=0.35');
 
 // SECTIONS fade in
-gsap.utils.toArray(".section").forEach(section => {
+gsap.utils.toArray('.section').forEach(section => {
   gsap.from(section, {
     scrollTrigger: {
       trigger: section,
-      start: "top 80%"
+      start: 'top 80%'
     },
     opacity: 0,
     y: 50,
@@ -28,10 +45,10 @@ gsap.utils.toArray(".section").forEach(section => {
 });
 
 // CARDS animation
-gsap.from(".card", {
+gsap.from('.card', {
   scrollTrigger: {
-    trigger: ".card",
-    start: "top 85%"
+    trigger: '.card',
+    start: 'top 85%'
   },
   opacity: 0,
   y: 30,
@@ -39,7 +56,7 @@ gsap.from(".card", {
 });
 
 // NAVBAR animation
-gsap.from(".navbar", {
+gsap.from('.navbar', {
   y: -50,
   opacity: 0,
   duration: 1
@@ -50,13 +67,40 @@ const menuToggle = document.querySelector('.menu-toggle');
 const navLinks = document.querySelector('.nav-links');
 
 if (menuToggle && navLinks) {
-  menuToggle.addEventListener('click', () => {
-    navLinks.classList.toggle('open');
+  menuToggle.setAttribute('aria-expanded', 'false');
+
+  const closeMenu = () => {
+    navLinks.classList.remove('open');
+    menuToggle.setAttribute('aria-expanded', 'false');
+    document.body.classList.remove('menu-open');
+  };
+
+  const openMenu = () => {
+    navLinks.classList.add('open');
+    menuToggle.setAttribute('aria-expanded', 'true');
+    document.body.classList.add('menu-open');
+  };
+
+  menuToggle.addEventListener('click', (event) => {
+    event.stopPropagation();
+    if (navLinks.classList.contains('open')) {
+      closeMenu();
+    } else {
+      openMenu();
+    }
   });
 
   document.querySelectorAll('.nav-links a').forEach(link => {
-    link.addEventListener('click', () => {
-      navLinks.classList.remove('open');
-    });
+    link.addEventListener('click', closeMenu);
+  });
+
+  document.addEventListener('click', (event) => {
+    if (!navLinks.contains(event.target) && !menuToggle.contains(event.target) && navLinks.classList.contains('open')) {
+      closeMenu();
+    }
+  });
+
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 760) closeMenu();
   });
 }
